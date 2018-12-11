@@ -2,11 +2,9 @@ import re
 import requests
 import json
 
-# get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "TREATY DECISIONS"
+# get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "LEGISLATION"
 
 base_link = r'https://www.ecolex.org'
-
-test_link = r'/details/decision/mercury-waste-3e5a9068-0c42-44e1-81dd-d94a9a91220c/?xcountry=Slovenia&amp;page=1'
 
 def get_value_or_none(pattern, text):
     """
@@ -86,19 +84,19 @@ def get_content(suffix, print_data = False):
     re_referenceNumber = re.compile(r'Reference number<\/dt>\s?<dd>(.*?)<')
     data['referenceNumber'] = get_value_or_none(re_referenceNumber, page_text)
 
-    # DATE, tip zapisa je niz oblike "MMM DD, YYYY", kjer MMM pomeni prve 3 črke imena meseca
+    # DATE, tip zapisa je niz (letnica)
 
-    re_date = re.compile(r'Date<\/dt>\s?<dd>(.*?)<')
+    re_date = re.compile(r'title="Date">(.*?)<')
     data['date'] = get_value_or_none(re_date, page_text)
 
     # SOURCE - NAME, tip zapisa je niz
 
-    re_sourceName = re.compile(r'Source<\/dt>\s?<dd>(.*?),')
+    re_sourceName = re.compile(r'Source<\/dt>\s*<dd>\s*(.*?),')
     data['sourceName'] = get_value_or_none(re_sourceName, page_text)
 
     # SOURCE LINK, tip zapisa je niz
 
-    re_sourceLink = re.compile(r'Source<\/dt>\s?<dd>.*?href="(.*?)"')
+    re_sourceLink = re.compile(r'Source<\/dt>\s*<dd>\s*.*\s*.*?href="(.*?)"')
     data['sourceLink'] = get_value_or_none(re_sourceLink, page_text)
 
     # STATUS, tip zapisa je niz
@@ -146,7 +144,7 @@ def get_content(suffix, print_data = False):
     # ABSTRACT, tip zapisa je niz
     # Zaenkrat mu odstranimo vse html tage, smiselno bi bilo, da se mogoče ohranijo tagi za odstavke 
 
-    re_abstract = re.compile(r'Abstract<\/dt>\s*<dd>\s*<div.*?>(.*?)<\/div>')
+    re_abstract = re.compile(r'Abstract<\/dt>\s*<dd>(.*?)<\/dd')
     abstract_text = get_value_or_none(re_abstract, page_text)
 
     if abstract_text is not None:
@@ -177,6 +175,11 @@ def get_content(suffix, print_data = False):
     if data['geographicalArea'] is not None:
         data['geographicalArea'] = data['geographicalArea'].split(',')
 
+    # ENTRY INTO FORCE NOTES, tip zapisa je niz
+
+    re_entryIntoForceNotes = re.compile(r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd')
+    data['entryIntoForceNotes'] = get_value_or_none(re_entryIntoForceNotes, page_text)
+
     ########################################################################
     ########################################################################
 
@@ -206,7 +209,7 @@ for line in links:
     rtip = re.compile(r'\/details\/(.*?)\/')
     tip = re.findall(rtip, url)[0]
 
-    if tip != 'decision':
+    if tip != 'legislation':
         continue
 
     count_all += 1
@@ -223,7 +226,7 @@ for line in links:
     
     # KO TESTIRAMO POBIRAMO SAMO PRVIH NEKAJ STRANI. 
     # ČE ŽELIŠ VSE PODATKE IZBRIŠI SPODNJI VRSTICI
-    if count_all > 10:
+    if count_all > 5:
         break
 
 print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
