@@ -2,8 +2,7 @@ import re
 import requests
 import json
 
-# TODO 
-# Vsakič preveri če regex najde kakšne zadetke. + preverit, kakšne vse metapodatke še lahko imajo datoteke.
+# get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "TREATY DECISIONS"
 
 base_link = r'https://www.ecolex.org'
 
@@ -159,11 +158,33 @@ def get_content(suffix, print_data = False):
     else:
         data['abstract'] = None
 
+    # FULL TEXT LINK, tip zapisa je niz
+
+    re_fullTextLink = re.compile(r'Full text<\/dt>\s*<dd>\s*<a href="(.*?)"')
+    data['fullTextLink'] = get_value_or_none(re_fullTextLink, page_text)
+
+    # COUNTRY/TERRITORY, tip zapisa je seznam nizov
+
+    re_countryTerritory = re.compile(r'Country\/Territory<\/dt>\s*<dd>(.*?)<')
+    data['Country/Territory'] = get_value_or_none(re_countryTerritory, page_text)
+    if data['Country/Territory'] is not None:
+        data['Country/Territory'] = data['Country/Territory'].split(',')
+    
+    # GEOGRAPHICAL AREA, tip zapisa je seznam nizov
+
+    re_geographicalArea = re.compile(r'Geographical area<\/dt>\s*<dd>(.*?)<')
+    data['geographicalArea'] = get_value_or_none(re_geographicalArea, page_text)
+    if data['geographicalArea'] is not None:
+        data['geographicalArea'] = data['geographicalArea'].split(',')
+
+    ########################################################################
+    ########################################################################
+
     if print_data:
         for key in data:
             print(key  + ' : ' + str(data[key]))
     
-    with open('data files\\' + data['name'] + '.json', 'w') as outfile:
+    with open('treaty decisions\\' + data['name'] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
 linksALL = 'main_links_ALL.txt'
@@ -181,6 +202,14 @@ for line in links:
     count_all += 1
 
     url = line.strip()
+
+    ## tu preverimo, če je željena datoteka tipa "TREATYY DECISION"
+    ## V primeru da je, jo v tej datoteki sparsamo.
+    rtip = re.compile(r'\/details\/(.*?)\/')
+    tip = re.findall(rtip, url)[0]
+
+    if tip != 'decision':
+        continue
 
     try:
         get_content(url, print_data=True)
@@ -200,8 +229,6 @@ for line in links:
 print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
 
 print(count_good)
-
-
 
 
 
