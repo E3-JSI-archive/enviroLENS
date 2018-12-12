@@ -1,6 +1,7 @@
 import re
 import requests
 import json
+from bs4 import BeautifulSoup
 
 # get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "LEGISLATION"
 
@@ -180,6 +181,74 @@ def get_content(suffix, print_data = False):
     re_entryIntoForceNotes = re.compile(r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd')
     data['entryIntoForceNotes'] = get_value_or_none(re_entryIntoForceNotes, page_text)
 
+    ########################################################################################
+    ########################################################################################
+
+    """
+    Tu spodaj pobiramo vse reference. Zaradi drugačnega zapisa html si bomo pomagali s knjižnico 
+    BeautifulSoup.
+
+    - Podatki o posameznem dokumentu so zapisani v html tagu "<article>"
+    - Podatki o referencah so zapisani v tagu "<section, id='legislation-references'>"
+    - Reference so grupirane po njihovem tipu (Amends, implements, implemented by, ...). Vsaka grupa je shranjena v 
+      <dl> tagu.
+    - Znotraj vsakega <dl> taga je v tagu <dt> zapisan tip reference, nato pa v vsakem <dd> tagu sledijo podatki za
+      vsako referenco
+
+    Z BeautifulSoup si pomagamo, da pride do posameznih <dd> tagov, nato pa z regexom poberemo podatke znotraj le tega.
+
+    Podatki bomo shranili v zgornji slovar pod ključ 'references'. Vanj bomo shranili nov slovar, ki bo imel za ključe
+    tipe referenc, vsak od teh pa bo imel za vrednost seznam referenc tega tipa skupaj s podatki.
+
+    data -> 'references' -> 'Amends' -> [slovarji s podatki o posamezni referenci ]
+
+    """
+
+    soup = BeautifulSoup(page_text, 'html.parser')
+    ref_section = soup.find('article').find('section', {'id' : 'legislation-references'})
+    if ref_section is not None:
+        ref_section = ref_section.find_all('dl')
+
+    data['references'] = dict()
+
+    if ref_section is not None:
+
+        for tip_reference in ref_section:
+            tip = tip_reference.dt.text
+            data['references'][tip] = []
+
+            for posamezna_referenca in tip_reference.find_all('dd'):
+
+                reftekst = str(posamezna_referenca)
+                
+                single_reference = dict()
+
+                re_refLink = re.compile(r'title">\s*<.*?="(.*?)"')
+                single_reference['refLink'] = get_value_or_none(re_refLink, reftekst)
+
+                re_refName = re.compile(r'search-result-title">\s*.*\s*.*?>(.*?)<')
+                single_reference['refName'] = get_value_or_none(re_refName, reftekst)
+
+                re_refCountry = re.compile(r'title="Country\/Territory">(.*)<')
+                single_reference['refCountry'] = get_value_or_none(re_refCountry, reftekst)
+
+                re_refDate = re.compile(r'title="Date">(.*)')
+                single_reference['refDate'] = get_value_or_none(re_refDate, reftekst)
+
+                re_refKeywords = re.compile(r'keywords">(.*?)<')
+                single_reference['refKeywords'] = get_value_or_none(re_refKeywords, reftekst)
+                if single_reference['refKeywords'] is not None:
+                    single_reference['refKeywords'] = single_reference['refKeywords'].split(',')
+
+                re_refSourceLink = re.compile(r'Source.*\s*.*? href="(.*?)"')
+                single_reference['refSourceLink'] = get_value_or_none(re_refSourceLink, reftekst)
+
+                re_refSourceName = re.compile(r'Source.*\s*.*?>(.*?)<')
+                single_reference['refSourceName'] = get_value_or_none(re_refSourceName, reftekst)
+
+                data['references'][tip].append(single_reference)
+
+
     ########################################################################
     ########################################################################
 
@@ -187,7 +256,7 @@ def get_content(suffix, print_data = False):
         for key in data:
             print(key  + ' : ' + str(data[key]))
     
-    with open('treaty decisions\\' + data['name'] + '.json', 'w') as outfile:
+    with open('legislation\\' + data['name'] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
 linksALL = 'main_links_ALL.txt'
@@ -218,11 +287,11 @@ for line in links:
         get_content(url, print_data=True)
         count_good += 1
     except KeyboardInterrupt:
-        break
+       break
     except:
-        print('FAIL', count_all, url)
-        FAILS.append(line)
-        count_fails += 1
+       print('FAIL', count_all, url)
+       FAILS.append(line)
+       count_fails += 1
     
     # KO TESTIRAMO POBIRAMO SAMO PRVIH NEKAJ STRANI. 
     # ČE ŽELIŠ VSE PODATKE IZBRIŠI SPODNJI VRSTICI
