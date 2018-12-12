@@ -2,6 +2,7 @@ import re
 import requests
 import json
 from bs4 import BeautifulSoup
+from time import time
 
 # get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "LEGISLATION"
 
@@ -256,7 +257,7 @@ def get_content(suffix, print_data = False):
         for key in data:
             print(key  + ' : ' + str(data[key]))
     
-    with open('legislation\\' + data['name'] + '.json', 'w') as outfile:
+    with open('legislation\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
 linksALL = 'main_links_ALL.txt'
@@ -269,6 +270,8 @@ count_good = 0
 count_fails = 0
 
 FAILS = []
+
+START_TIME = time()
 
 for line in links:
     url = line.strip()
@@ -284,19 +287,23 @@ for line in links:
     count_all += 1
 
     try:
-        get_content(url, print_data=True)
+        get_content(url, print_data=False)
         count_good += 1
     except KeyboardInterrupt:
        break
-    except:
+    except Exception as e:
        print('FAIL', count_all, url)
        FAILS.append(line)
        count_fails += 1
+       print(e)
     
     # KO TESTIRAMO POBIRAMO SAMO PRVIH NEKAJ STRANI. 
     # ČE ŽELIŠ VSE PODATKE IZBRIŠI SPODNJI VRSTICI
-    if count_all > 5:
+    if count_all > 200:
         break
+
+    if count_all % 100 == 0:
+        print(count_all, time() - START_TIME)
 
 print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
 

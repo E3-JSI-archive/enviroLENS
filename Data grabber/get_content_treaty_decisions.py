@@ -184,7 +184,7 @@ def get_content(suffix, print_data = False):
         for key in data:
             print(key  + ' : ' + str(data[key]))
     
-    with open('treaty decisions\\' + data['name'] + '.json', 'w') as outfile:
+    with open('treaty decisions\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
 linksALL = 'main_links_ALL.txt'
