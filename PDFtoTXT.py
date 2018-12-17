@@ -39,5 +39,5 @@ def PDFtoTxt(PDFname,TxtFileName, pages=None):
     txt = open(TxtFileName, 'w+')
     txt.write(text.decode())
 
-PDFtoTxt('snet.pdf','novo9.txt')
+
 
