@@ -73,7 +73,6 @@ def get_content(suffix, print_data = False):
     if get_page.status_code != 200:
         print('Request Denied!', suffix)
         #: in case request is denied, we can't do anything
-        return
     page_text = get_page.text
 
     #: Below are all the parameters and regex patterns that a document might have. Since the pattern can vary drastically
