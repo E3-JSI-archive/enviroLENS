@@ -2,7 +2,7 @@ import re
 import requests
 import json
 
-# get_content(url, print_data=False) funkcija, ki bo pobrala metapodatke za dokumente "TREATY DECISIONS"
+#: get_content(url, print_data=False) is a function that will grab the relevant data for documents of type 'TREATY DECISIONS'
 
 base_link = r'https://www.ecolex.org'
 
@@ -10,8 +10,14 @@ test_link = r'/details/decision/mercury-waste-3e5a9068-0c42-44e1-81dd-d94a9a9122
 
 def get_value_or_none(pattern, text):
     """
-    Poišče vzorec v tekstu in vrne zadetek oziroma, če vzorca ne najde, vrne None.
+    Given a regex pattern and a text, the function will return the match or None if no match will be found.
+
+    :Pattern:   regex pattern of type re.compile(...)
+    :text:      type string in which we are searching for a match
+
+    In case a match is found, it returns it, otherwise it returns None.
     """
+
     temp = re.findall(pattern, text)
     if len(temp) > 0:
         return temp[0]
@@ -19,8 +25,13 @@ def get_value_or_none(pattern, text):
         return None
 
 def remove_forbidden_characters(name):
-    """
-    Iz imena pobriše vse prepovedane znake (znake, ki v windowsu ne smejo biti v imenu datotek)
+    """ 
+    A function that will remove all the forbidden characters out of the string. The forbidden characters are the ones
+    that are not allowed to be used in the names of windows files. Those are  --> r'/*=:<>"|\'.
+
+    :name:     a string
+
+    returns the string name without the forbidden characters. 
     """
 
     new_name = ""
@@ -35,24 +46,25 @@ def remove_forbidden_characters(name):
 
 def get_content(suffix, print_data = False):
     """
-    S strani poberemo vse pomembne metapodatke o dogovoru in jih spravimo v slovar ter nato shranimo v json. Ti so:
+    From the page ( 'ecolex.org'+ suffix ) we grab the relevant data that is (type, document Type, name, reference, number,
+    date, source name and source link, status, subject, keywords, treaty name and link, meeting name and link, website, abstract,
+    ...).
+    The data is then saved into a dictionary with parameter names as keys and the grabbed result as the value.
 
-    type (Treaty Decision, Legislation, ...)
-    document type (Decision, Regulation, Legislation, ...)
-    name 
-    reference number
-    date
-    source (ime + link)
-    status
-    subject
-    keywords
-    treaty (ime + link)
-    meeting (ime + link)
-    website 
-    abstract
-    ...
+    Example:
 
+    data["category"] = "Treaty decision"
+    data["name"] = "Decision XXIX_21 _ Membership of the Implementation Committee"
 
+    In the end the dictionary is saved into a json file named (data["name"] without forbidden characters and 
+    length limited to 100).json
+
+    :suffix:        the suffix of the url from which we are extracting the data. The suffix string is everything that comes 
+                    after the 'ecolex.org'
+    :print_data:    Optional parameter that is by default set to False. In case it is set to True, the function will at the end 
+                    also print what it managed to extract from the page.
+
+    returns None
     """
 
     data = dict()
@@ -60,14 +72,19 @@ def get_content(suffix, print_data = False):
     get_page = requests.get(base_link + suffix)
     if get_page.status_code != 200:
         print('Request Denied!', suffix)
+        #: in case request is denied, we can't do anything
+        return
     page_text = get_page.text
 
-    # CATEGORY, tip zapisa je niz
+    #: Below are all the parameters and regex patterns that a document might have. Since the pattern can vary drastically
+    #: it was easier to do for every parameter one by one.
+
+    #: CATEGORY, type : string
 
     re_category = re.compile(r'record-icon">\s*<.*?title="(.*?)"')
     data['category'] = get_value_or_none(re_category, page_text)
 
-    # NAME, tip zapisa je niz
+    #: NAME, type : string
 
     re_name = re.compile(r'<h1>(.*?)<')
     data['name'] = get_value_or_none(re_name, page_text)
@@ -76,75 +93,75 @@ def get_content(suffix, print_data = False):
     else:
         print('Name of the file not found!', suffix)
 
-    # DOCUMENT TYPE, tip zapisa je niz
+    #: DOCUMENT TYPE, type : string
 
     re_documentType = re.compile(r'Document type<\/dt>\s?<dd>(.*?)<')
     data['documentType'] = get_value_or_none(re_documentType, page_text)
 
-    # REFERENCE NUMBER, tip zapisa je niz
+    #: REFERENCE NUMBER, type : string
 
     re_referenceNumber = re.compile(r'Reference number<\/dt>\s?<dd>(.*?)<')
     data['referenceNumber'] = get_value_or_none(re_referenceNumber, page_text)
 
-    # DATE, tip zapisa je niz oblike "MMM DD, YYYY", kjer MMM pomeni prve 3 črke imena meseca
+    #: DATE, type : string -> "MMM DD, YYYY" where MMM are the first 3 letters of the month. 
 
     re_date = re.compile(r'Date<\/dt>\s?<dd>(.*?)<')
     data['date'] = get_value_or_none(re_date, page_text)
 
-    # SOURCE - NAME, tip zapisa je niz
+    #: SOURCE - NAME, type : string
 
     re_sourceName = re.compile(r'Source<\/dt>\s?<dd>(.*?),')
     data['sourceName'] = get_value_or_none(re_sourceName, page_text)
 
-    # SOURCE LINK, tip zapisa je niz
+    #: SOURCE LINK, type : string
 
     re_sourceLink = re.compile(r'Source<\/dt>\s?<dd>.*?href="(.*?)"')
     data['sourceLink'] = get_value_or_none(re_sourceLink, page_text)
 
-    # STATUS, tip zapisa je niz
+    #: STATUS, type : string
 
     re_status = re.compile(r'Status<\/dt>\s?<dd>(.*?)<')
     data['status'] = get_value_or_none(re_status, page_text)
 
-    # SUBJECT, tip zapisa je seznam nizov
+    #: SUBJECT, type : List of strings
 
     re_subject = re.compile(r'Subject<\/dt>\s*<dd>(.*?)<')
     data['subject'] = re.findall(re_subject, page_text)[0].split(',')
 
-    # KEYWORD, tip zapisa je seznam nizov
+    #: KEYWORD, type : list of strings
 
     re_keyword = re.compile(r'span class="tag">(.*?)<')
     data['keyword'] = re.findall(re_keyword, page_text)
 
-    # TREATY - LINK, tip zapisa je niz
+    #: TREATY - LINK, type : string
 
     re_treatyLink = re.compile(r'Treaty<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['treatyLink'] = get_value_or_none(re_treatyLink, page_text)
     if data['treatyLink'] is not None:
         data['treatyLink'] = base_link + data['treatyLink']
 
-    # TREATY - NAME, tip zapisa je niz
+    #: TREATY - NAME, type : string
 
     re_treatyName = re.compile(r'Treaty<\/dt>\s*<dd>\s*.*?>\s*(.*)')
     data['treatyName'] = get_value_or_none(re_treatyName, page_text)
 
-    # MEETING - NAME, tip zapisa je niz
+    #: MEETING - NAME, type : string
 
     re_meetingName = re.compile(r'Meeting<\/dt>\s*<dd>\s*.*\s*.*?>(.*?)<')
     data['meetingName'] = get_value_or_none(re_meetingName, page_text)
 
-    # MEETING - LINK, tip zapisa je niz
+    #: MEETING - LINK, type : string
 
     re_meetingLink = re.compile(r'Meeting<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['meetingLink'] = get_value_or_none(re_meetingLink, page_text)
 
-    # WEBSITE, tip zapisa je niz 
+    #: WEBSITE, type : string 
 
     re_website = re.compile(r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['webiste'] = get_value_or_none(re_website, page_text)
 
-    # ABSTRACT, tip zapisa je niz
-    # Zaenkrat mu odstranimo vse html tage, smiselno bi bilo, da se mogoče ohranijo tagi za odstavke 
+    #: ABSTRACT, type : string
+    #: At current implementation all the html tags are removed from the text. It might make sense to keep that <p> paragraph tags. 
 
     re_abstract = re.compile(r'Abstract<\/dt>\s*<dd>\s*<div.*?>(.*?)<\/div>')
     abstract_text = get_value_or_none(re_abstract, page_text)
@@ -158,19 +175,19 @@ def get_content(suffix, print_data = False):
     else:
         data['abstract'] = None
 
-    # FULL TEXT LINK, tip zapisa je niz
+    #: FULL TEXT LINK, type : string
 
     re_fullTextLink = re.compile(r'Full text<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['fullTextLink'] = get_value_or_none(re_fullTextLink, page_text)
 
-    # COUNTRY/TERRITORY, tip zapisa je seznam nizov
+    #: COUNTRY/TERRITORY, type : list of strings
 
     re_countryTerritory = re.compile(r'Country\/Territory<\/dt>\s*<dd>(.*?)<')
     data['Country/Territory'] = get_value_or_none(re_countryTerritory, page_text)
     if data['Country/Territory'] is not None:
         data['Country/Territory'] = data['Country/Territory'].split(',')
     
-    # GEOGRAPHICAL AREA, tip zapisa je seznam nizov
+    #: GEOGRAPHICAL AREA, type : list of strings
 
     re_geographicalArea = re.compile(r'Geographical area<\/dt>\s*<dd>(.*?)<')
     data['geographicalArea'] = get_value_or_none(re_geographicalArea, page_text)
@@ -187,48 +204,53 @@ def get_content(suffix, print_data = False):
     with open('treaty decisions\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
-linksALL = 'main_links_ALL.txt'
-linksSLO = 'main_links_SLO.txt'
+def main():
 
-links = open(linksSLO, 'r')
+    linksALL = 'main_links_ALL.txt'
+    linksSLO = 'main_links_SLO.txt'
 
-count_all = 0
-count_good = 0
-count_fails = 0
+    links = open(linksSLO, 'r')
 
-FAILS = []
+    count_all = 0
+    count_good = 0
+    count_fails = 0
 
-for line in links:
-    url = line.strip()
+    FAILS = []
 
-    ## tu preverimo, če je željena datoteka tipa "TREATYY DECISION"
-    ## V primeru da je, jo v tej datoteki sparsamo.
-    rtip = re.compile(r'\/details\/(.*?)\/')
-    tip = re.findall(rtip, url)[0]
+    for line in links:
+        url = line.strip()
 
-    if tip != 'decision':
-        continue
+        ## in this file we only grab data from files of type 'TREATY DECISIONS'.
+        ## Here we check if the currecnt link is of that type.
+        rtip = re.compile(r'\/details\/(.*?)\/')
+        tip = re.findall(rtip, url)[0]
 
-    count_all += 1
+        if tip != 'decision':
+            continue
 
-    try:
-        get_content(url, print_data=True)
-        count_good += 1
-    except KeyboardInterrupt:
-        break
-    except:
-        print('FAIL', count_all, url)
-        FAILS.append(line)
-        count_fails += 1
-    
-    # KO TESTIRAMO POBIRAMO SAMO PRVIH NEKAJ STRANI. 
-    # ČE ŽELIŠ VSE PODATKE IZBRIŠI SPODNJI VRSTICI
-    if count_all > 10:
-        break
+        count_all += 1
 
-print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
+        try:
+            get_content(url, print_data=True)
+            count_good += 1
+        except KeyboardInterrupt:
+            break
+        except:
+            print('FAIL', count_all, url)
+            FAILS.append(line)
+            count_fails += 1
+        
+        # WHEN TESTING HOW THE SCRIPT WORKS WE ONLY GRAB THE FIRST FEW PAGES 
+        # IF YOU WANT TO GRAB THE DATA FROM ALL PAGES, COMMENT OUT THE 2 LINES BELOW
+        if count_all > 10:
+            break
 
-print(count_good)
+    print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
+
+    print(count_good)
+
+if __name__ == '__main__':
+    main()
 
 
 
