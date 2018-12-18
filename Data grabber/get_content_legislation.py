@@ -157,7 +157,7 @@ def get_content(suffix, print_data = False):
     #: WEBSITE, type : string
 
     re_website = re.compile(r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"')
-    data['webiste'] = get_value_or_none(re_website, page_text)
+    data['website'] = get_value_or_none(re_website, page_text)
 
     #: ABSTRACT, type : string
     #: In the current implementation all html tags are removed from the text. It might make sense to keep the paragraphs tags.  
@@ -270,12 +270,15 @@ def get_content(suffix, print_data = False):
     with open('legislation\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
-def main():
+def main(filterSLO=True):
 
     linksALL = 'main_links_ALL.txt'
     linksSLO = 'main_links_SLO.txt'
 
-    links = open(linksSLO, 'r')
+    if filterSLO:
+        links = open(linksSLO, 'r')
+    else:
+        links = open(linksALL, 'r')
 
     count_all = 0
     count_good = 0
