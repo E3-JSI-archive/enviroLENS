@@ -3,21 +3,32 @@ import requests
 from time import time
 
 def get_main_links(filterSLO=True):
-    
-    # Samo za zadetke, ki se navezujejo na Slovenijo 
-    # Strani je trenutno 616
+    """
+    Function that will extract all the links to documents from 'ecolex.org' and save them into a file.
+
+    :filterSLO:     Set to True we will extract links only for documents that are relevant to Slovenia
+                    and save them into file 'main_links_SLO.txt'
+                    Set to False we will extract all the links and save them into file 'main_links_ALL.txt'
+
+    returns None
+    """
+
+    # Link to the documents that are relevant for Slovenia, currently there are around 620 pages.
+    # Each page has links to 20 documents.
     LINK_SLO = r'https://www.ecolex.org/result/?xcountry=Slovenia&page='
 
-    # Za vse zadetke
-    # Strani je trenutno 10636
+    # Link to all the documents. Currently there are about 10640 pages 
+    # Each page has links to 20 documents.
     LINK_ALL = r'https://www.ecolex.org/result/?page='
 
     if filterSLO:
         filename = 'main_links_SLO.txt'
+        # NUMBER OF PAGES WHEN WE FILTER FOR SLOVENIA RELEVANT DOCUMENTS
         pages = 620
         link = LINK_SLO
     else:
         filename = 'main_links_ALL.txt'
+        # NUMBER OF PAGES 
         pages = 10640
         link = LINK_ALL
 
