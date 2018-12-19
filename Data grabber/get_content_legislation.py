@@ -3,46 +3,11 @@ import requests
 import json
 from bs4 import BeautifulSoup
 from time import time
+from helperFunctions import get_value_or_none, remove_forbidden_characters, get_list_or_none
 
 #: get_content(url, print_data=False) is a function that will grab the relevant data for documents of type 'LEGISLATION'
 
 base_link = r'https://www.ecolex.org'
-
-def get_value_or_none(pattern, text):
-    """
-    Given a regex pattern and a text, the function will return the match or None if no match will be found.
-
-    :Pattern:   regex pattern of type re.compile(...)
-    :text:      type string in which we are searching for a match
-
-    In case a match is found, it returns it, otherwise it returns None.
-    """
-
-    temp = re.findall(pattern, text)
-    if len(temp) > 0:
-        return temp[0]
-    else:
-        return None
-
-def remove_forbidden_characters(name):
-    """
-    A function that will remove all the forbidden characters out of the string. The forbidden characters are the ones
-    that are not allowed to be used in the names of windows files. Those are  --> r'/*=:<>"|\'.
-
-    :name:     a string
-
-    returns the string name without the forbidden characters. 
-    """
-
-    new_name = ""
-    for znak in name:
-        if znak in r'\/*?:<>"|':
-            new_name += '_'
-        else:
-            new_name += znak
-    
-    return new_name
-
 
 def get_content(suffix, print_data = False):
     """
@@ -78,12 +43,35 @@ def get_content(suffix, print_data = False):
     #: Below are all the parameters and regex patterns that a document might have. Since the pattern can vary drastically
     #: it was easier to do for every parameter one by one.
 
+    string_parameters = {
+        'category' : r'record-icon">\s*<.*?title="(.*?)"',
+        'documentType' : r'Document type<\/dt>\s?<dd>(.*?)<',
+        'referenceNumber' : r'Reference number<\/dt>\s?<dd>(.*?)<',
+        'date' : r'title="Date">(.*?)<',
+        'sourceName' : r'Source<\/dt>\s*<dd>\s*(.*?),',
+        'sourceLink' : r'Source<\/dt>\s*<dd>\s*.*\s*.*?href="(.*?)"',
+        'status' : r'Status<\/dt>\s?<dd>(.*?)<',
+        'treatyName' : r'Treaty<\/dt>\s*<dd>\s*.*?>\s*(.*)',
+        'meetingName' : r'Meeting<\/dt>\s*<dd>\s*.*\s*.*?>(.*?)<',
+        'meetingLink' : r'Meeting<\/dt>\s*<dd>\s*<a href="(.*?)"',
+        'website' : r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"',
+        'fullTextLink' : r'Full text<\/dt>\s*<dd>\s*<a href="(.*?)"',
+        'entryIntoForceNones' : r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd',
+          
+    }
+
+    list_parameters = {
+        'subject' : r'Subject<\/dt>\s*<dd>(.*?)<',
+        'Country/Territory' : r'Country\/Territory<\/dt>\s*<dd>(.*?)<',
+        'geographicalArea' : r'Geographical area<\/dt>\s*<dd>(.*?)<',   
+    }
+
     #: CATEGORY, type : string
 
     re_category = re.compile(r'record-icon">\s*<.*?title="(.*?)"')
     data['category'] = get_value_or_none(re_category, page_text)
 
-    #: NAME, type : string
+    ###: NAME, type : string
 
     re_name = re.compile(r'<h1>(.*?)<')
     data['name'] = get_value_or_none(re_name, page_text)
@@ -125,14 +113,14 @@ def get_content(suffix, print_data = False):
     #: SUBJECT, type : list of strings
 
     re_subject = re.compile(r'Subject<\/dt>\s*<dd>(.*?)<')
-    data['subject'] = re.findall(re_subject, page_text)[0].split(',')
+    data['subject'] = get_list_or_none(re_subject, page_text)
 
-    #: KEYWORD, type : list of strings
+    ###: KEYWORD, type : list of strings
 
     re_keyword = re.compile(r'span class="tag">(.*?)<')
     data['keyword'] = re.findall(re_keyword, page_text)
 
-    #: TREATY - LINK, type : string
+    ###: TREATY - LINK, type : string
 
     re_treatyLink = re.compile(r'Treaty<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['treatyLink'] = get_value_or_none(re_treatyLink, page_text)
@@ -159,7 +147,7 @@ def get_content(suffix, print_data = False):
     re_website = re.compile(r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"')
     data['website'] = get_value_or_none(re_website, page_text)
 
-    #: ABSTRACT, type : string
+    ###: ABSTRACT, type : string
     #: In the current implementation all html tags are removed from the text. It might make sense to keep the paragraphs tags.  
 
     re_abstract = re.compile(r'Abstract<\/dt>\s*<dd>(.*?)<\/dd')
@@ -182,16 +170,12 @@ def get_content(suffix, print_data = False):
     #: COUNTRY/TERRITORY, type : list of strings
 
     re_countryTerritory = re.compile(r'Country\/Territory<\/dt>\s*<dd>(.*?)<')
-    data['Country/Territory'] = get_value_or_none(re_countryTerritory, page_text)
-    if data['Country/Territory'] is not None:
-        data['Country/Territory'] = data['Country/Territory'].split(',')
+    data['Country/Territory'] = get_list_or_none(re_countryTerritory, page_text)
     
     #: GEOGRAPHICAL AREA, type : list of strings
 
     re_geographicalArea = re.compile(r'Geographical area<\/dt>\s*<dd>(.*?)<')
-    data['geographicalArea'] = get_value_or_none(re_geographicalArea, page_text)
-    if data['geographicalArea'] is not None:
-        data['geographicalArea'] = data['geographicalArea'].split(',')
+    data['geographicalArea'] = get_list_or_none(re_geographicalArea, page_text)
 
     #: ENTRY INTO FORCE NOTES, type : string
 
@@ -247,9 +231,7 @@ def get_content(suffix, print_data = False):
                 single_reference['refDate'] = get_value_or_none(re_refDate, reftekst)
 
                 re_refKeywords = re.compile(r'keywords">(.*?)<')
-                single_reference['refKeywords'] = get_value_or_none(re_refKeywords, reftekst)
-                if single_reference['refKeywords'] is not None:
-                    single_reference['refKeywords'] = single_reference['refKeywords'].split(',')
+                single_reference['refKeywords'] = get_list_or_none(re_refKeywords, reftekst)
 
                 re_refSourceLink = re.compile(r'Source.*\s*.*? href="(.*?)"')
                 single_reference['refSourceLink'] = get_value_or_none(re_refSourceLink, reftekst)
