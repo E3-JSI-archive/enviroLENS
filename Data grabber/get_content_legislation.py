@@ -56,20 +56,24 @@ def get_content(suffix, print_data = False):
         'meetingLink' : r'Meeting<\/dt>\s*<dd>\s*<a href="(.*?)"',
         'website' : r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"',
         'fullTextLink' : r'Full text<\/dt>\s*<dd>\s*<a href="(.*?)"',
-        'entryIntoForceNones' : r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd',
-          
+        'entryIntoForceNotes' : r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd',
     }
 
     list_parameters = {
         'subject' : r'Subject<\/dt>\s*<dd>(.*?)<',
-        'Country/Territory' : r'Country\/Territory<\/dt>\s*<dd>(.*?)<',
-        'geographicalArea' : r'Geographical area<\/dt>\s*<dd>(.*?)<',   
+        'country/Territory' : r'Country\/Territory<\/dt>\s*<dd>(.*?)<',
+        'geographicalArea' : r'Geographical area<\/dt>\s*<dd>(.*?)<',
     }
 
-    #: CATEGORY, type : string
+    for parameter_name, regex_pattern in string_parameters.items():
+        re_pat = re.compile(regex_pattern)
+        data[parameter_name] = get_value_or_none(re_pat, page_text)
+    
+    for parameter_name, regex_pattern in list_parameters.items():
+        re_pat = re.compile(regex_pattern)
+        data[parameter_name] = get_list_or_none(re_pat, page_text)
 
-    re_category = re.compile(r'record-icon">\s*<.*?title="(.*?)"')
-    data['category'] = get_value_or_none(re_category, page_text)
+    # Those are special and are done separately:
 
     ###: NAME, type : string
 
@@ -79,41 +83,6 @@ def get_content(suffix, print_data = False):
         data['name'] = remove_forbidden_characters(data['name'])
     else:
         print('Name of the file not found!', suffix)
-
-    #: DOCUMENT TYPE, type : string
-
-    re_documentType = re.compile(r'Document type<\/dt>\s?<dd>(.*?)<')
-    data['documentType'] = get_value_or_none(re_documentType, page_text)
-
-    #: REFERENCE NUMBER, type : string
-
-    re_referenceNumber = re.compile(r'Reference number<\/dt>\s?<dd>(.*?)<')
-    data['referenceNumber'] = get_value_or_none(re_referenceNumber, page_text)
-
-    #: DATE, type : string 
-
-    re_date = re.compile(r'title="Date">(.*?)<')
-    data['date'] = get_value_or_none(re_date, page_text)
-
-    #: SOURCE - NAME, type : string
-
-    re_sourceName = re.compile(r'Source<\/dt>\s*<dd>\s*(.*?),')
-    data['sourceName'] = get_value_or_none(re_sourceName, page_text)
-
-    #: SOURCE LINK, type : string
-
-    re_sourceLink = re.compile(r'Source<\/dt>\s*<dd>\s*.*\s*.*?href="(.*?)"')
-    data['sourceLink'] = get_value_or_none(re_sourceLink, page_text)
-
-    #: STATUS, type : string
-
-    re_status = re.compile(r'Status<\/dt>\s?<dd>(.*?)<')
-    data['status'] = get_value_or_none(re_status, page_text)
-
-    #: SUBJECT, type : list of strings
-
-    re_subject = re.compile(r'Subject<\/dt>\s*<dd>(.*?)<')
-    data['subject'] = get_list_or_none(re_subject, page_text)
 
     ###: KEYWORD, type : list of strings
 
@@ -126,26 +95,6 @@ def get_content(suffix, print_data = False):
     data['treatyLink'] = get_value_or_none(re_treatyLink, page_text)
     if data['treatyLink'] is not None:
         data['treatyLink'] = base_link + data['treatyLink']
-
-    #: TREATY - NAME, type : string
-
-    re_treatyName = re.compile(r'Treaty<\/dt>\s*<dd>\s*.*?>\s*(.*)')
-    data['treatyName'] = get_value_or_none(re_treatyName, page_text)
-
-    #: MEETING - NAME, type : string
-
-    re_meetingName = re.compile(r'Meeting<\/dt>\s*<dd>\s*.*\s*.*?>(.*?)<')
-    data['meetingName'] = get_value_or_none(re_meetingName, page_text)
-
-    #: MEETING - LINK, type : string
-
-    re_meetingLink = re.compile(r'Meeting<\/dt>\s*<dd>\s*<a href="(.*?)"')
-    data['meetingLink'] = get_value_or_none(re_meetingLink, page_text)
-
-    #: WEBSITE, type : string
-
-    re_website = re.compile(r'Website<\/dt>\s*<dd>\s*<a href="(.*?)"')
-    data['website'] = get_value_or_none(re_website, page_text)
 
     ###: ABSTRACT, type : string
     #: In the current implementation all html tags are removed from the text. It might make sense to keep the paragraphs tags.  
@@ -162,26 +111,6 @@ def get_content(suffix, print_data = False):
     else:
         data['abstract'] = None
 
-    #: FULL TEXT LINK, type : string
-
-    re_fullTextLink = re.compile(r'Full text<\/dt>\s*<dd>\s*<a href="(.*?)"')
-    data['fullTextLink'] = get_value_or_none(re_fullTextLink, page_text)
-
-    #: COUNTRY/TERRITORY, type : list of strings
-
-    re_countryTerritory = re.compile(r'Country\/Territory<\/dt>\s*<dd>(.*?)<')
-    data['Country/Territory'] = get_list_or_none(re_countryTerritory, page_text)
-    
-    #: GEOGRAPHICAL AREA, type : list of strings
-
-    re_geographicalArea = re.compile(r'Geographical area<\/dt>\s*<dd>(.*?)<')
-    data['geographicalArea'] = get_list_or_none(re_geographicalArea, page_text)
-
-    #: ENTRY INTO FORCE NOTES, type : string
-
-    re_entryIntoForceNotes = re.compile(r'Entry into force notes<\/dt>\s*<dd>(.*?)<\/dd')
-    data['entryIntoForceNotes'] = get_value_or_none(re_entryIntoForceNotes, page_text)
-
     ########################################################################################
     ########################################################################################
 
@@ -195,7 +124,7 @@ def get_content(suffix, print_data = False):
     - Inside every <dl> tag, we can find the type of the group in <dt> tag, and then in every <dd> tag that follows, we can grab
       the data of each reference.
 
-    Here we use BeautifulSoup library since with this tools we are able to navigate through html tags and structure easily.
+    Here we use BeautifulSoup library since with its tools we are able to navigate through html tags and structure easily.
 
     """
 
@@ -212,32 +141,27 @@ def get_content(suffix, print_data = False):
             tip = type_reference.dt.text
             data['references'][tip] = []
 
-            for posamezna_referenca in type_reference.find_all('dd'):
+            for each_reference in type_reference.find_all('dd'):
 
-                reftekst = str(posamezna_referenca)
+                reftekst = str(each_reference)
                 
                 single_reference = dict()
 
-                re_refLink = re.compile(r'title">\s*<.*?="(.*?)"')
-                single_reference['refLink'] = get_value_or_none(re_refLink, reftekst)
+                ref_string_parameters = {
+                    'refLink' : r'title">\s*<.*?="(.*?)"',
+                    'refName' : r'search-result-title">\s*.*\s*.*?>(.*?)<',
+                    'refCountry' : r'title="Country\/Territory">(.*)<',
+                    'refDate' : r'title="Date">(.*)',
+                    'refSourceLink' : r'Source.*\s*.*? href="(.*?)"',
+                    'refSourceName' : r'Source.*\s*.*?>(.*?)<',
+                }
 
-                re_refName = re.compile(r'search-result-title">\s*.*\s*.*?>(.*?)<')
-                single_reference['refName'] = get_value_or_none(re_refName, reftekst)
-
-                re_refCountry = re.compile(r'title="Country\/Territory">(.*)<')
-                single_reference['refCountry'] = get_value_or_none(re_refCountry, reftekst)
-
-                re_refDate = re.compile(r'title="Date">(.*)')
-                single_reference['refDate'] = get_value_or_none(re_refDate, reftekst)
+                for parameter_name, regex_pattern in ref_string_parameters.items():
+                    re_pat = re.compile(regex_pattern)
+                    single_reference[parameter_name] = get_value_or_none(re_pat, reftekst)
 
                 re_refKeywords = re.compile(r'keywords">(.*?)<')
                 single_reference['refKeywords'] = get_list_or_none(re_refKeywords, reftekst)
-
-                re_refSourceLink = re.compile(r'Source.*\s*.*? href="(.*?)"')
-                single_reference['refSourceLink'] = get_value_or_none(re_refSourceLink, reftekst)
-
-                re_refSourceName = re.compile(r'Source.*\s*.*?>(.*?)<')
-                single_reference['refSourceName'] = get_value_or_none(re_refSourceName, reftekst)
 
                 data['references'][tip].append(single_reference)
 
@@ -284,7 +208,7 @@ def main(filterSLO=True):
         count_all += 1
 
         try:
-            get_content(url, print_data=False)
+            get_content(url, print_data=True)
             count_good += 1
         except KeyboardInterrupt:
             break
@@ -296,7 +220,7 @@ def main(filterSLO=True):
         
         # WHEN TESTING IF THE SCRIPT WORKS WE ONLY GRAB THE FIRST FEW PAGES 
         # IF YOU WANT TO GRAB THE DATA FROM ALL PAGES, COMMENT OUT THE 2 LINES BELOW
-        if count_all > 200:
+        if count_all > 20:
             break
 
         if count_all % 100 == 0:
