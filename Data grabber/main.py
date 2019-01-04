@@ -24,6 +24,5 @@ def main():
         get_content_treaty_decisions.main(filterSLO = False)
 
 
-
 if __name__ == '__main__':
     main()
