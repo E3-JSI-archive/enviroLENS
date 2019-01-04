@@ -118,57 +118,8 @@ def get_content(suffix, print_data = False):
     with open('treaty decisions\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
-def main(filterSLO=True):
-
-    linksALL = 'main_links_ALL.txt'
-    linksSLO = 'main_links_SLO.txt'
-
-    
-    if filterSLO:
-        links = open(linksSLO, 'r')
-    else:
-        links = open(linksALL, 'r')
-
-    count_all = 0
-    count_good = 0
-    count_fails = 0
-
-    FAILS = []
-
-    for line in links:
-        url = line.strip()
-
-        ## in this file we only grab data from files of type 'TREATY DECISIONS'.
-        ## Here we check if the currecnt link is of that type.
-        rtip = re.compile(r'\/details\/(.*?)\/')
-        tip = re.findall(rtip, url)[0]
-
-        if tip != 'decision':
-            continue
-
-        count_all += 1
-
-        try:
-            get_content(url, print_data=True)
-            count_good += 1
-        except KeyboardInterrupt:
-            break
-        except:
-            print('FAIL', count_all, url)
-            FAILS.append(line)
-            count_fails += 1
-        
-        # WHEN TESTING HOW THE SCRIPT WORKS WE ONLY GRAB THE FIRST FEW PAGES 
-        # IF YOU WANT TO GRAB THE DATA FROM ALL PAGES, COMMENT OUT THE 2 LINES BELOW
-        if count_all > 10:
-            break
-
-    print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
-
-    print(count_good)
-
 if __name__ == '__main__':
-    main()
+    pass
 
 
 

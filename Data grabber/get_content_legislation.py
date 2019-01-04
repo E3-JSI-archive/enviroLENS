@@ -176,62 +176,8 @@ def get_content(suffix, print_data = False):
     with open('legislation\\' + data['name'][:150] + '.json', 'w') as outfile:
         json.dump(data, outfile)
 
-def main(filterSLO=True):
-
-    linksALL = 'main_links_ALL.txt'
-    linksSLO = 'main_links_SLO.txt'
-
-    if filterSLO:
-        links = open(linksSLO, 'r')
-    else:
-        links = open(linksALL, 'r')
-
-    count_all = 0
-    count_good = 0
-    count_fails = 0
-
-    FAILS = []
-
-    # We add the clock to track the speed of the progress.
-    START_TIME = time()
-
-    for line in links:
-        url = line.strip()
-
-        ## Here we check if the document is of type 'LEGISLATION'
-        rtip = re.compile(r'\/details\/(.*?)\/')
-        tip = re.findall(rtip, url)[0]
-
-        if tip != 'legislation':
-            continue
-
-        count_all += 1
-
-        try:
-            get_content(url, print_data=True)
-            count_good += 1
-        except KeyboardInterrupt:
-            break
-        except Exception as e:
-            print('FAIL', count_all, url)
-            FAILS.append(line)
-            count_fails += 1
-            print(e)
-        
-        # WHEN TESTING IF THE SCRIPT WORKS WE ONLY GRAB THE FIRST FEW PAGES 
-        # IF YOU WANT TO GRAB THE DATA FROM ALL PAGES, COMMENT OUT THE 2 LINES BELOW
-        if count_all > 20:
-            break
-
-        if count_all % 100 == 0:
-            print(count_all, time() - START_TIME)
-
-    print('Successfully taken data from {} out of {} pages'.format(count_good, count_all))
-
-    print(count_good)
-
 if __name__ == '__main__':
-    main()
+    pass
 
 
 

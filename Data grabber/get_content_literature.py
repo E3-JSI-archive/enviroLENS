@@ -1,6 +1,7 @@
 import re
 import requests
 from bs4 import BeautifulSoup
+import json
 from helperFunctions import get_value_or_none, remove_forbidden_characters, get_list_or_none
 
 
@@ -200,33 +201,16 @@ def get_content(suffix, print_data=False):
         for key in data:
             print(key  + ' : ' + str(data[key]))
 
+    with open('literature\\' + data['name'][:150] + '.json', 'w') as outfile:
+        json.dump(data, outfile)
 
 
-def main(filterSLO=True):
 
-    linksALL = 'main_links_ALL.txt'
-    linksSLO = 'main_links_SLO.txt'
 
-    if filterSLO:
-        links = open(linksSLO, 'r')
-    else:
-        links = open(linksALL, 'r')
-    
-    for line in links:
-        url = line.strip()
-
-        ## Here we check if the document is of type 'LITERATURE'
-        rtip = re.compile(r'\/details\/(.*?)\/')
-        tip = re.findall(rtip, url)[0] 
-
-        if tip == 'literature':
-            get_content(url, print_data=True)
-
-# if __name__ == '__main__':
-#     main()
-
-tlink = r'/details/literature/marine-protected-areas-and-ocean-stewardship-a-legal-perspective-ana-093555/?type=literature&page=15'
-tlink = r'/details/literature/recognition-of-enviromental-services-in-the-icjs-first-award-of-compensation-for-international-environmental-damage-ana-093549/?type=literature&page=15'
-get_content(tlink, True)
+if __name__ == '__main__':
+    tlink = r'/details/literature/marine-protected-areas-and-ocean-stewardship-a-legal-perspective-ana-093555/?type=literature&page=15'
+    tlink = r'/details/literature/recognition-of-enviromental-services-in-the-icjs-first-award-of-compensation-for-international-environmental-damage-ana-093549/?type=literature&page=15'
+    tlink = r'/details/literature/legal-aspects-of-land-purchasesale-disputes-in-indonesia-ana-093552/?type=literature&page=15'
+    get_content(tlink, True)
 
 
