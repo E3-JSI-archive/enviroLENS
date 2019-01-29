@@ -56,6 +56,6 @@ def get_main_links(filterSLO=True):
 
 
 if __name__ == '__main__':
-    get_main_links()
+    get_main_links(False)
 
 

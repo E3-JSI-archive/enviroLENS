@@ -10,7 +10,8 @@ import re
 
 # PARAMETERS:
 
-GET_SLOVENIA_RELATED_DOCUMENTS = True
+GET_SLOVENIA_RELATED_DOCUMENTS = False
+PART = 0
 
 def main():
 
@@ -44,12 +45,12 @@ def main():
     total_files = 0
 
     # Names of the files inside which links are saved
-    linksALL = 'main_links_ALL.txt'
+    linksALL = 'main_links_ALL_part' + str(PART) + '.txt'
     linksSLO = 'main_links_SLO.txt'
 
     # Comment out this line, if you want to extract data for all slovenian documents.
     # This was made for testing to check whether all functions are working properly. 
-    linksSLO = 'main_links_SLO_sample.txt'
+    ## linksSLO = 'main_links_SLO_sample.txt'
 
     if filterSLO:
         links = open(linksSLO, 'r')
@@ -96,12 +97,10 @@ def main():
         
         checkpoint = time.time()
 
-        if total_files % 10 == 0:
+        if total_files % 100 == 0:
             print(success)
             print(total)
             print(time.time() - START_TIME)
-        if total_files > 200:
-            break
     
     print(success)
     print(total)
@@ -109,4 +108,8 @@ def main():
         
 
 if __name__ == '__main__':
-    main()
+    
+    for p in range(1, 11):
+        PART = p
+        main()
+        print('PARTS', p, 'successfully taken!')
