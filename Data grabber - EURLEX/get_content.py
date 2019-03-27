@@ -175,22 +175,22 @@ def get(celex_number, language='EN'):
         document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
         document_data['text_' + language] = document_text_lang
 
-    with open(celex + '.json', 'w') as outfile:
+    with open('eurlex_docs\\' + celex + '.json', 'w') as outfile:
         json.dump(document_data, outfile, indent=1)
 
     return 
 
 
+if __name__ == '__main__':
 
+    test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018R0644'
+    test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018R0196'
+    test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018D0051'
 
-test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018R0644'
-test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018R0196'
-test_link = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:32018D0051'
+    language = 'EN'
+    celex = '32018D0051'
+    # celex = '32018R0644'
+    # celex = '62018CC0095'
+    # celex = '62018CC0095'
 
-language = 'EN'
-celex = '32018D0051'
-# celex = '32018R0644'
-# celex = '62018CC0095'
-# celex = '62018CC0095'
-
-get(celex, language)
+    get(celex, language)

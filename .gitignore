@@ -1,5 +1,11 @@
+data_preparation_for_infominer/legislation/
+data_preparation_for_infominer/jurisprudence/
+data_preparation_for_infominer/treaty/
+data_preparation_for_infominer/treaty decisions/
+data_preparation_for_infominer/literature/
 Data grabber/legislation/
 Data grabber/jurisprudence/
 Data grabber/treaty/
 Data grabber/treaty decisions/
 Data grabber/literature/
+Data grabber - EURLEX/eurlex_docs/
