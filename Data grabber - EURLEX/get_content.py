@@ -9,12 +9,53 @@ LANGUAGES = [
     'HU', 'MT', 'NL', 'PL', 'PT', 'RO', 'SK', 'SL', 'FI', 'SV'
 ]
 
+def get_available_languages(celex_number):
+    """
+    Function that will take celex_number as input and return us all the languages in which this particular
+    document is avaiable.
 
-def get(celex_number, language='EN'):
+    :output: list of available languages
+    :example output: ['EN', 'CS', 'DE']
+    """
+
+    url = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:{}'.format(celex_number)
+
+    page = requests.get(url)
+    page_text = page.text
+
+    # We use BeautifulSoup to navigate to html block in which language data is written.
+
+    soup = BeautifulSoup(page_text, 'html.parser')
+    soup = soup.find('body')
+    soup = soup.find('div', {'class' : 'Wrapper clearfix'})
+    soup = soup.find('div', {'class' : 'container-fluid'})
+    soup = soup.find('div', {'id' : 'MainContent'})
+    soup = soup.find('div', {'class' : 'row row-offcanvas'})
+    soup = soup.find('div', {'id' : 'documentView', 'class' : 'col-md-9'})
+    soup = soup.find('div', {'class' : 'EurlexContent'})
+    soup = soup.find('div', {'class' : 'panel-group'})
+    soup = soup.find('div', {'id' : 'multilingualPoint'})
+
+    available_lang_part = soup.find('div', {'id' : 'PP2Contents'})
+    available_lang_part = available_lang_part.find('div', {'class' : 'PubFormats'})
+    available_lang_part = available_lang_part.find('ul', {'class' : 'dropdown-menu PubFormatVIEW'})
+
+    available_languages = []
+
+    # <li> tags that have class name 'disabled' are the li tags of non available languages.
+    for child in available_lang_part.find_all('li'):
+        if 'disabled' not in child.get('class'):
+            available_languages.append(child.get_text().strip())
+    
+    return available_languages
+
+
+
+
+def get_document_data_fixed_language(celex_number, language='EN'):
     """
     Requests the url of a dcoument with CELEX NUMBER = celex_number on eur-lex.europa.eu and extracts
-    relevant information. Extracted information is saved into a dictionary
-    and then into a JSON file. The name of the JSON file will be the documents CELEX number.
+    relevant information. Extracted information is saved into a dictionary and is then returned.
     """
 
     url = r'https://eur-lex.europa.eu/legal-content/{}/ALL/?uri=CELEX:{}'.format(language, celex_number)
@@ -137,48 +178,47 @@ def get(celex_number, language='EN'):
                 date_events[date_description[i]] = dates[i]
             
             document_data['dateEvents'] = date_events
-        
-    # This is the part where we extract the documents in all possible languages. We first check all the available languages 
-    # of our document and then we iterate over all found languages and extract full text of the document.
 
-    available_lang_part = metadata.find('div', {'id' : 'PP2Contents'})
-    available_lang_part = available_lang_part.find('div', {'class' : 'PubFormats'})
-    available_lang_part = available_lang_part.find('ul', {'class' : 'dropdown-menu PubFormatVIEW'})
+    # Full document text is inside <div id='text'> tag. We navigate into it, collect its content and do some cleanup.
+    # We erase multiple spaces and newlines.        
 
-    available_languages = []
+    document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
+    document_data['text'] = document_text_lang
 
-    # <li> tags that have class name 'disabled' are the li tags of non available languages.
-    for child in available_lang_part.find_all('li'):
-        if 'disabled' not in child.get('class'):
-            available_languages.append(child.get_text().strip())
+    return document_data
+
+def collect_data(celex):
+    """
+    Function that will extract all data about the document in all the available languages. 
+    Document is uniquely determined by its celex number. Collected data will be stored into a
+    dictionary and then into a json file named -> (celex_number_of_document).json 
+
+    Keys of a dictionary will be different parameter names with language suffix at the end.
+    examples:
+        * translatedTitle_EN
+        * classification_BG
+        * classification_EN
+        ...
+    
+    """
+
+    available_languages = get_available_languages(celex)
+
+    document_data = {}
 
     for language in available_languages:
 
-        # For each language we do almost exactly the procedure above, except we now just navigate into the block that contains
-        # the text of the document and extract data.
+        # Collecting data in fixed language
+        data_lang = get_document_data_fixed_language(celex, language)
 
-        url = r'https://eur-lex.europa.eu/legal-content/{}/ALL/?uri=CELEX:{}'.format(language, celex_number)
-
-        page = requests.get(url)
-        page_text = page.text 
-
-        soup = BeautifulSoup(page_text, 'html.parser')
-        soup = soup.find('body')
-        soup = soup.find('div', {'class' : 'Wrapper clearfix'})
-        soup = soup.find('div', {'class' : 'container-fluid'})
-        soup = soup.find('div', {'id' : 'MainContent'})
-        soup = soup.find('div', {'class' : 'row row-offcanvas'})
-        soup = soup.find('div', {'id' : 'documentView', 'class' : 'col-md-9'})
-        soup = soup.find('div', {'class' : 'EurlexContent'})
-        soup = soup.find('div', {'class' : 'panel-group'})
-
-        document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
-        document_data['text_' + language] = document_text_lang
-
+        # Changing the keys to have the language suffix and adding them into our main dictionary
+        for parameter_name, value in data_lang.items():
+            document_data[parameter_name + '_' + language] = value
+    
     with open('eurlex_docs\\' + celex + '.json', 'w') as outfile:
-        json.dump(document_data, outfile, indent=1)
+        json.dump(document_data, outfile, indent = 1)
 
-    return 
+
 
 
 if __name__ == '__main__':
@@ -193,4 +233,5 @@ if __name__ == '__main__':
     # celex = '62018CC0095'
     # celex = '62018CC0095'
 
-    get(celex, language)
+    print(get_available_languages(celex))
+    collect_data(celex)
