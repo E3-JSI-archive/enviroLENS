@@ -3,6 +3,7 @@ import re
 import json
 from helper_functions import *
 from bs4 import BeautifulSoup
+import time
 
 LANGUAGES = [
     'BG', 'ES', 'CS', 'DA', 'DE', 'ET', 'EL', 'EN', 'FR', 'GA', 'HR', 'IT', 'LV', 'LT',
@@ -20,7 +21,12 @@ def get_available_languages(celex_number):
 
     url = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:{}'.format(celex_number)
 
+    # We will redo request until we get a successful one
     page = requests.get(url)
+    while page.status_code != 200:
+        page = requests.get(url)
+        time.sleep(0.3)
+
     page_text = page.text
 
     # We use BeautifulSoup to navigate to html block in which language data is written.
@@ -60,7 +66,11 @@ def get_document_data_fixed_language(celex_number, language='EN'):
 
     url = r'https://eur-lex.europa.eu/legal-content/{}/ALL/?uri=CELEX:{}'.format(language, celex_number)
 
+    # We will redo requests every 0.3 seconds until we get a successful one 
     page = requests.get(url)
+    while page.status_code != 200:
+        page = requests.get(url)
+        time.sleep(0.3)
     page_text = page.text
 
     document_data = {}
@@ -202,18 +212,28 @@ def collect_data(celex):
     
     """
 
+    # If you want all the available languages comment out the second line:
+
     available_languages = get_available_languages(celex)
+    available_languages = [L for L in ['EN', 'SL', 'DE'] if L in available_languages]
 
     document_data = {}
 
     for language in available_languages:
 
-        # Collecting data in fixed language
-        data_lang = get_document_data_fixed_language(celex, language)
+        try:
+            # Collecting data in fixed language
+            data_lang = get_document_data_fixed_language(celex, language)
 
-        # Changing the keys to have the language suffix and adding them into our main dictionary
-        for parameter_name, value in data_lang.items():
-            document_data[parameter_name + '_' + language] = value
+            # Changing the keys to have the language suffix and adding them into our main dictionary
+            for parameter_name, value in data_lang.items():
+                document_data[parameter_name + '_' + language] = value
+            
+            time.sleep(0.5)
+
+            print(celex, language)
+        except:
+            print('FAIL at Celex Number: {}'.format(celex))
     
     with open('eurlex_docs\\' + celex + '.json', 'w') as outfile:
         json.dump(document_data, outfile, indent = 1)
