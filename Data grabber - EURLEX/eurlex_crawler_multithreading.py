@@ -42,7 +42,7 @@ class Producer():
 
     queue = deque()
 
-    for y in range(1950, 1970):
+    for y in range(1999, 2020):
         queue.append(y)
 
     workers = build_work_force(queue, 10)

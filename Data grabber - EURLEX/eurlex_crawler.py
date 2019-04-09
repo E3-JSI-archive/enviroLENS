@@ -51,6 +51,8 @@ def get_celex_numbers(year):
     # While loop through all the pages.
     while True:
 
+        time.sleep(0.5)
+
         # We fill YEAR and PAGE into template URL
         url_page = URL.format(current_year, current_page)
 

@@ -4,6 +4,7 @@ import json
 from helper_functions import *
 from bs4 import BeautifulSoup
 import time
+import os
 
 LANGUAGES = [
     'BG', 'ES', 'CS', 'DA', 'DE', 'ET', 'EL', 'EN', 'FR', 'GA', 'HR', 'IT', 'LV', 'LT',
@@ -67,10 +68,15 @@ def get_document_data_fixed_language(celex_number, language='EN'):
     url = r'https://eur-lex.europa.eu/legal-content/{}/ALL/?uri=CELEX:{}'.format(language, celex_number)
 
     # We will redo requests every 0.3 seconds until we get a successful one 
+    # If we will fail requests 20 times, we stop trying.
+    failed_requests_counter = 0
     page = requests.get(url)
     while page.status_code != 200:
         page = requests.get(url)
         time.sleep(0.3)
+        failed_requests_counter += 1
+        if failed_requests_counter > 20:
+            return {}
     page_text = page.text
 
     document_data = {}
@@ -115,85 +121,99 @@ def get_document_data_fixed_language(celex_number, language='EN'):
 
     for block in metadata.find_all('div', {'class' : 'panel panel-default PagePanel'}):
 
-        if 'Classifications' in block.text:
-            descriptor_block = block.find('div', {'id' : 'PPClass_Contents'})
-            descriptor_block = descriptor_block.find('div', {'class' : 'panel-body'})
-            descriptor_block = descriptor_block.find('dl', {'class' : 'NMetadata'})
-            
-            group_labels = []
-            descriptors = []
-
-            for child_node in descriptor_block.find_all('dt'):
-                group_labels.append(child_node.get_text().strip().strip(':'))
-            for child_node in descriptor_block.find_all('dd'):
-                itemizer = child_node.find('ul')
+        try:
+            if 'Classifications' in block.text:
+                descriptor_block = block.find('div', {'id' : 'PPClass_Contents'})
+                descriptor_block = descriptor_block.find('div', {'class' : 'panel-body'})
+                descriptor_block = descriptor_block.find('dl', {'class' : 'NMetadata'})
                 
-                descriptors_by_group = []
+                group_labels = []
+                descriptors = []
 
-                for item in itemizer.find_all('li'):
-                    descriptors_by_group.append(item.get_text().strip().replace('\n', ''))
+                for child_node in descriptor_block.find_all('dt'):
+                    group_labels.append(child_node.get_text().strip().strip(':'))
+                for child_node in descriptor_block.find_all('dd'):
+                    itemizer = child_node.find('ul')
+                    
+                    descriptors_by_group = []
+
+                    for item in itemizer.find_all('li'):
+                        descriptors_by_group.append(item.get_text().strip().replace('\n', ''))
+                    
+                    descriptors.append(descriptors_by_group)
                 
-                descriptors.append(descriptors_by_group)
-            
-            classification  = {}
-            for i in range(len(group_labels)):
-                classification[group_labels[i]] = descriptors[i]
-            
-            document_data['classification'] = classification
+                classification  = {}
+                for i in range(len(group_labels)):
+                    classification[group_labels[i]] = descriptors[i]
+                
+                document_data['classification'] = classification
+        except:
+            document_data['classification'] = None
 
         if 'Miscellaneous information' in block.text:
 
-            misc_block = block.find('div', {'id' : 'PPMisc_Contents'})
-            misc_block = misc_block.find('div', {'class' : 'panel-body'})
-            misc_block = misc_block.find('dl', {'class' : 'NMetadata'})
+            try:
+                misc_block = block.find('div', {'id' : 'PPMisc_Contents'})
+                misc_block = misc_block.find('div', {'class' : 'panel-body'})
+                misc_block = misc_block.find('dl', {'class' : 'NMetadata'})
 
-            misc_info_groups = []
-            misc_info_definitions = []
+                misc_info_groups = []
+                misc_info_definitions = []
 
-            for child_node in misc_block.find_all('dt'):
-                misc_info_groups.append(child_node.get_text().strip().strip(':'))
-            for child_node in misc_block.find_all('dd'):
-                group_values = []
-                for child in child_node.find_all():
+                for child_node in misc_block.find_all('dt'):
+                    misc_info_groups.append(child_node.get_text().strip().strip(':'))
+                for child_node in misc_block.find_all('dd'):
+                    group_values = []
+                    for child in child_node.find_all():
 
-                    group_values.append(child.get_text().strip())
+                        group_values.append(child.get_text().strip())
+                    
+                    misc_info_definitions.append(group_values)
+
+                misc_info = {}
+
+                for i in range(len(misc_info_groups)):
+                    misc_info[misc_info_groups[i]] = misc_info_definitions[i]
                 
-                misc_info_definitions.append(group_values)
-
-            misc_info = {}
-
-            for i in range(len(misc_info_groups)):
-                misc_info[misc_info_groups[i]] = misc_info_definitions[i]
+                document_data['miscellaneousInformation'] = misc_info
             
-            document_data['miscellaneousInformation'] = misc_info
-            
+            except:
+                document_data['miscellaneousInformation'] = None
+
+
         if 'Dates' in block.find('div', {'class' : 'panel-heading'}).get_text():
 
-            dates_block = block.find('div', { 'id' : 'PPDates_Contents'})
-            dates_block = dates_block.find('div', { 'class' : 'panel-body'})
-            dates_block = dates_block.find('dl', { 'class' : 'NMetadata'})
+            try:
+                dates_block = block.find('div', { 'id' : 'PPDates_Contents'})
+                dates_block = dates_block.find('div', { 'class' : 'panel-body'})
+                dates_block = dates_block.find('dl', { 'class' : 'NMetadata'})
 
-            date_description = []
-            dates = []
+                date_description = []
+                dates = []
 
-            for child_node in dates_block.find_all('dt'):
-                date_description.append(child_node.get_text().strip().strip(':'))
-            for child_node in dates_block.find_all('dd'):
-                event = child_node.get_text().replace('\n', '').split(';')
-                dates.append(event)
-            
-            date_events = {}
+                for child_node in dates_block.find_all('dt'):
+                    date_description.append(child_node.get_text().strip().strip(':'))
+                for child_node in dates_block.find_all('dd'):
+                    event = child_node.get_text().replace('\n', '').split(';')
+                    dates.append(event)
+                
+                date_events = {}
 
-            for i in range(len(date_description)):
-                date_events[date_description[i]] = dates[i]
-            
-            document_data['dateEvents'] = date_events
+                for i in range(len(date_description)):
+                    date_events[date_description[i]] = dates[i]
+                
+                document_data['dateEvents'] = date_events
+            except:
+                document_data['dateEvents'] = None
 
     # Full document text is inside <div id='text'> tag. We navigate into it, collect its content and do some cleanup.
     # We erase multiple spaces and newlines.        
 
-    document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
-    document_data['text'] = document_text_lang
+    try:
+        document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
+        document_data['text'] = document_text_lang
+    except:
+        document_data['text'] = "Full text was either not available or we were unable to collect it."
 
     return document_data
 
@@ -213,9 +233,11 @@ def collect_data(celex):
     """
 
     # If you want all the available languages comment out the second line:
-
-    available_languages = get_available_languages(celex)
-    available_languages = [L for L in ['EN', 'SL', 'DE'] if L in available_languages]
+    try:
+        available_languages = get_available_languages(celex)
+        available_languages = [L for L in ['EN', 'SL', 'DE'] if L in available_languages]
+    except:
+        available_languages = ['EN', 'SL', 'DE']
 
     document_data = {}
 
@@ -232,10 +254,17 @@ def collect_data(celex):
             time.sleep(0.5)
 
             print(celex, language)
-        except:
+        except Exception as e:
             print('FAIL at Celex Number: {}'.format(celex))
+            print(e)
     
-    with open('eurlex_docs\\' + celex + '.json', 'w') as outfile:
+    # We will save our file into eurlex_docs folder
+    # And we will name our file {celex_number}.json
+    current_path = os.getcwd()
+    docs_subdirectory = os.path.join(current_path, 'eurlex_docs')
+    filename = remove_forbidden_characters(celex) + '.json'
+    docs_path = os.path.join(docs_subdirectory, filename)
+    with open(docs_path, 'w') as outfile:
         json.dump(document_data, outfile, indent = 1)
 
 
