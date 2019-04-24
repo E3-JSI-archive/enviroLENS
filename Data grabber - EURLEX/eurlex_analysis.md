@@ -37,7 +37,7 @@ Each document is classified in two ways:
 
 ### EUROVOC descriptors
 
-In our whole dataset there are a total of **6714** distinct EUROVOC descriptors. In the table we can observe top 200 descriptors sorted by number of times they appear as an descriptor of a document.
+In our whole dataset there are a total of **6714** distinct EUROVOC descriptors. In the table we can observe top 200 descriptors sorted by number of times they appear as a descriptor of a document.
 
 | descriptor | number of occurences |
 |---|:-:|
@@ -241,3 +241,60 @@ In our whole dataset there are a total of **6714** distinct EUROVOC descriptors.
 |rice|2021|
 |regional aid|2020|
 |ship's flag|1998|
+
+### Subjects
+
+During investigating the dataset we can observe **275** different subjects. The most common one is _External relations_, followed by _Commerical policy_ and _Agriculture and Fisheries_. In the table below you can find the top 50 most common subjects sorted by the number of times they appear as a descriptor of a document.
+
+| subject | number of occurences |
+|---|:-:|
+|External relations|23580|
+|Commercial policy|17894|
+|Agriculture and Fisheries|16018|
+|Competition|13283|
+|Internal market - Principles|13226|
+|Approximation of laws|12366|
+|Environment|12364|
+|Common foreign and security policy|10941|
+|Transport|10760|
+|Fisheries policy|9669|
+|Consumer protection|9605|
+|Provisions governing the Institutions|9306|
+|State aids|8260|
+|Financial provisions|8068|
+|Veterinary legislation|7891|
+|Accession|7386|
+|Social provisions|7167|
+|Concentrations between undertakings|6462|
+|public health|6384|
+|Budget|5924|
+|Foodstuffs|5384|
+|Energy|4676|
+|Freedom of establishment|4659|
+|Technical barriers|4535|
+|Association Agreement|4535|
+|Information and verification|4520|
+|European Free Trade Association (EFTA)|4258|
+|Human rights|4226|
+|Dumping|4158|
+|CCT: derogations|4041|
+|Taxation|3885|
+|European Agricultural Guidance and Guarantee Fund (EAGGF)|3813|
+|Common customs tariff|3809|
+|Milk products|3741|
+|Research and technological development|3587|
+|Fruit and vegetables|3468|
+|Free movement of goods|3445|
+|Economic policy|3397|
+|Justice and home affairs|3188|
+|Principles, objectives and tasks of the Treaties|3162|
+|Agricultural structures|2956|
+|Development cooperation|2932|
+|Brussels Convention of 27 September 1968|2908|
+|Beef and veal|2839|
+|Plant health legislation|2811|
+|Cereals|2808|
+|Wine|2714|
+|Regional policy|2694|
+|Cooperation|2564|
+|Telecommunications|2537|
