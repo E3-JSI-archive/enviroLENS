@@ -53,13 +53,10 @@ class Producer():
     celex_nums_path = os.path.join(current_path, 'celex_nums')
 
     for f in os.listdir(celex_nums_path):
-        # For testing purposes only, we currently only download
-        # documents with year tag after 2000.
-        if int(f[:4]) > 2000:
-            with open(os.path.join(celex_nums_path, f), 'r') as infile:
-                celex_by_year = json.load(infile)
-                celex_numbers_collection = celex_numbers_collection.union(set(celex_by_year))
-        
+        with open(os.path.join(celex_nums_path, f), 'r') as infile:
+            celex_by_year = json.load(infile)
+            celex_numbers_collection = celex_numbers_collection.union(set(celex_by_year))
+    
     # We will keep a track of documents that were already collected
     already_done = set()
     # Now we navigate into celex directory and check all the documents
@@ -80,9 +77,9 @@ class Producer():
         if number not in already_done:
             # For testing purposes only, we only assign 20 docs
             # to work queue.
-            cnt += 1
-            if cnt > 100:
-                break
+            # cnt += 1
+            # if cnt > 100:
+            #     break
             q.append(number)
     
     workers = build_work_force(q, 10)

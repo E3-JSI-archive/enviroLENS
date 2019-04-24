@@ -23,10 +23,16 @@ def get_available_languages(celex_number):
     url = r'https://eur-lex.europa.eu/legal-content/EN/ALL/?uri=CELEX:{}'.format(celex_number)
 
     # We will redo request until we get a successful one
+    # Maximum 20 failed attempts
+    failed_requests_counter = 0
     page = requests.get(url)
     while page.status_code != 200:
         page = requests.get(url)
         time.sleep(0.3)
+
+        failed_requests_counter += 1
+        if failed_requests_counter > 20:
+            return ['EN']
 
     page_text = page.text
 
