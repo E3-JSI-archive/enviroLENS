@@ -11,6 +11,13 @@ D:\Samo\Envirolens\Data grabber - EURLEX
 | documents in EN (english)  |  645759 |
 | documents in DE (german) | 643789  |
 | documents in SL (slovene) | 515318  |
+| documents available in exactly EN, DE, SL| 512876 |
+| documents available in exactly EN, DE| 125693 |
+| documents available in exactly EN, SL| 477 |
+| documents available in exactly DE, SL| 510 |
+| documents available in exactly EN| 6713 |
+| documents available in exactly DE| 4710 |
+| documents available in exactly SL| 1455 |
 
 A total of **864827** documents were collected. Their total size is bigger than **20 GB**. Out of those we were able to collect data for **652434** of them in atleast one of the following languages:
 
@@ -28,6 +35,16 @@ Below you can see distribution of documents text sizes:
 
 The last bin contatins all the documents that are over 100000 characters long.
 
+## Date of the documents
+
+On the picture below we can observe distributions of documents by their month and year of publication. On the x axis we have all possible months starting from year 1940. We have also collected a few documents dating before 1940 but their amount is insignificant.
+On the graph we can see 2 major bumps before the start of general uptrend in the amount of documents. Those two bumps are April, 1951 and March, 1957 and are corelated to major historical events that led to founding of European Union. In April 1951 Belgium, France, Italy, Luxemborough, West Germany and the Netherlands formed the European coal and steel Community. Later in March 1957 those countries formed European Economic Community. 
+
+After that we are able to observe steady increase in number of documents.
+
+
+![slika](pictures/date_distribution.png)
+
 ## Classifications
 
 Each document is classified in two ways:
@@ -38,6 +55,8 @@ Each document is classified in two ways:
 ### EUROVOC descriptors
 
 In our whole dataset there are a total of **6714** distinct EUROVOC descriptors. In the table we can observe top 200 descriptors sorted by number of times they appear as a descriptor of a document.
+
+![slika](pictures/descriptors.png)
 
 | descriptor | number of occurences |
 |---|:-:|
@@ -244,7 +263,9 @@ In our whole dataset there are a total of **6714** distinct EUROVOC descriptors.
 
 ### Subjects
 
-During investigating the dataset we can observe **275** different subjects. The most common one is _External relations_, followed by _Commerical policy_ and _Agriculture and Fisheries_. In the table below you can find the top 50 most common subjects sorted by the number of times they appear as a descriptor of a document.
+During investigation of the dataset we can observe **275** different subjects. The most common one is _External relations_, followed by _Commerical policy_ and _Agriculture and Fisheries_. In the table below you can find the top 50 most common subjects sorted by the number of times they appear as a descriptor of a document.
+
+![slika](pictures/subjects.png)
 
 | subject | number of occurences |
 |---|:-:|
