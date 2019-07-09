@@ -1,7 +1,7 @@
 import os
 import json
-import psycopg2
 from time import time
+import psycopg2
 
 START_TIME = time()
 
@@ -26,8 +26,8 @@ def parse_date(date):
 
 def parse_argument_into_correct_form(arg):
     """
-    This function will leave None arg as None, but will remove any ' characters from strings 
-    and also add ' to the front and to the back of the string. That way the arg will be compatible with 
+    This function will leave None arg as None, but will remove any ' characters from strings
+    and also add ' to the front and to the back of the string. That way the arg will be compatible with
     INSERT statement for postgres.
     """
     if arg is None:
@@ -320,24 +320,90 @@ def insert_document_descriptors_rows():
         for descriptor in descriptors:
             descriptor = parse_argument_into_correct_form(descriptor)
             cursor.execute(statement, (document_celex_num, descriptor))
+
+    cursor.close()
+    conn.commit()
+    conn.close()
+
+def create_available_languages_table():
+    """
+    Creates available languages table. The columns will be 
+    DOCUMENT_CELEX_NUM, LANGUAGE
+    """
+
+    conn = psycopg2.connect(**conn_str)
+    cursor = conn.cursor()
+
+    commands = [
+        """
+        CREATE TABLE available_languages (
+            document_celex_num TEXT,
+            language TEXT,
+            FOREIGN KEY (document_celex_num) REFERENCES documents (document_celex_num)
+        )
+        """,
+    ]
+
+    for command in commands:
+        cursor.execute(command)
+    
+    cursor.close()
+    conn.commit()
+    conn.close()
+
+def populate_available_languages_table():
+    """
+    With this function we will populate available languages table.
+    For each document X, for each available language L we will insert row
+    (X,L) into the table.
+    """
+
+    conn = psycopg2.connect(**conn_str)
+    cursor = conn.cursor()
+
+    with open('document_languages.json', 'r') as infile:
+        language_data = json.load(infile)
+
+    select_celex = "SELECT (document_celex_num) FROM documents"
+    cursor.execute(select_celex)
+    celex_nums = set(e[0] for e in cursor.fetchall())
+
+    command_template = """
+        INSERT INTO available_languages (document_celex_num, language) VALUES (%s, %s)
+    """
+
+    print(celex_nums)
+    print(len(language_data))
+
+    for celex_num in celex_nums:
+        if celex_num in language_data:
+            for language in language_data[celex_num]:
+                cursor.execute(command_template, (celex_num, language))
     
     cursor.close()
     conn.commit()
     conn.close()
 
 if __name__ == '__main__':
-    create_eurlex_tables()
-    print('Creating eurlex tables successful.')
+    # create_eurlex_tables()
+    # print('Creating eurlex tables successful.')
+    # print('Total time passed', time() - START_TIME)
+    # insert_document_rows()
+    # print('Populating documents table successful.')
+    # print('Total time passed', time() - START_TIME)
+    # insert_subject_descriptor_rows()
+    # print('Populating descriptors, subjects table successful.')
+    # print('Total time passed', time() - START_TIME)
+    # insert_document_subjects_rows()
+    # print('Populating doc subjects table successful.')
+    # print('Total time passed', time() - START_TIME)
+    # insert_document_descriptors_rows()
+    # print('Populating doc descriptors table successful.')
+    # print('Total time passed', time() - START_TIME)
+    create_available_languages_table()
+    print('Creating available languages table')
     print('Total time passed', time() - START_TIME)
-    insert_document_rows()
-    print('Populating documents table successful.')
+    populate_available_languages_table()
+    print('Populating languages table!')
     print('Total time passed', time() - START_TIME)
-    insert_subject_descriptor_rows()
-    print('Populating descriptors, subjects table successful.')
-    print('Total time passed', time() - START_TIME)
-    insert_document_subjects_rows()
-    print('Populating doc subjects table successful.')
-    print('Total time passed', time() - START_TIME)
-    insert_document_descriptors_rows()
-    print('Populating doc descriptors table successful.')
-    print('Total time passed', time() - START_TIME)
+

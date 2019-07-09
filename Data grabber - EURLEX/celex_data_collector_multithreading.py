@@ -1,16 +1,17 @@
+import os
+import time
 import json
 import threading
 from collections import deque
-from get_content import collect_data
-import os
-import time
+from get_content import get_available_languages, collect_data
 
 class Worker(threading.Thread):
 
-    def __init__(self, queue, name):
+    def __init__(self, queue, name, language_pack):
         threading.Thread.__init__(self)
         self.name = name
         self.queue = queue
+        self.language_pack = language_pack
     
     def run(self):
 
@@ -21,18 +22,20 @@ class Worker(threading.Thread):
             task = self.queue.popleft()
 
             if task != 'Workday is over!':
-                collect_data(task)
-                print('Worker {} did task {}.'.format(self.name, task))
+                try:
+                    collect_data(task)
+                except:
+                    pass
             else:
                 print('Worker {} going home. Bye!'.format(self.name))
                 break
 
-def build_work_force(queue, number_of_workers):
+def build_work_force(queue, number_of_workers, language_pack):
 
     workers = []
 
     for i in range(number_of_workers):
-        worker = Worker(queue, i)
+        worker = Worker(queue, i, language_pack)
         worker.start()
         workers.append(worker)
     
@@ -42,8 +45,7 @@ class Producer():
 
     start_time = time.time()
 
-    # We create a working queue.
-    q = deque()
+    language_pack = dict()
 
     # Collect all the available celex numbers
     celex_numbers_collection = set()
@@ -57,43 +59,33 @@ class Producer():
             celex_by_year = json.load(infile)
             celex_numbers_collection = celex_numbers_collection.union(set(celex_by_year))
     
-    # We will keep a track of documents that were already collected
-    already_done = set()
-    # Now we navigate into celex directory and check all the documents
-    # that we have already collected
+    # Get environment docs
+    with open('environment_documents.json', 'r') as infile:
+        environment_docs = json.load(infile)
     
-    celex_path = os.path.join(current_path, 'eurlex_docs')
+    # We will work in rounds of 10000 documents.
+    while len(celex_numbers_collection) > 0:
 
-    for f in os.listdir(celex_path):
-        # The filed ends with '.json', we need to extract everything
-        # that comes before that part.
-        number = f[:-5]
-        already_done.add(number)
+        # We create a working queue.
+        q = deque()
 
-    # We create a work queue. We add all the celex numbers that 
-    # are not yet collected!
-    cnt = 0
-    for number in celex_numbers_collection:
-        if number not in already_done:
-            # For testing purposes only, we only assign 20 docs
-            # to work queue.
-            # cnt += 1
-            # if cnt > 100:
-            #     break
-            q.append(number)
-    
-    workers = build_work_force(q, 10)
+        for _ in range(200):
+            number_candidate = celex_numbers_collection.pop()
+            if number_candidate in environment_docs:
+                q.append(number_candidate)
+            
+            if len(celex_numbers_collection) == 0:
+                break
+        
+        workers = build_work_force(q, 20, language_pack)
 
-    for worker in workers:
-        q.append('Workday is over!')
+        for worker in workers:
+            q.append('Workday is over!')
 
-    for worker in workers:
-        worker.join()
+        for worker in workers:
+            worker.join()
 
-    print('Job is done. Time needed : {}'.format(round(time.time() - start_time)))
+        print('One Batch is done. Time needed : {} - documents left : {}'.format(round(time.time() - start_time), len(celex_numbers_collection)))
 
 if __name__ == '__main__':
-    Producer()
-
-
-
+    p = Producer()

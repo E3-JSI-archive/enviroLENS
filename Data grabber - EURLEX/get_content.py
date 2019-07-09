@@ -216,8 +216,9 @@ def get_document_data_fixed_language(celex_number, language='EN'):
     # We erase multiple spaces and newlines.        
 
     try:
-        document_text_lang = soup.find('div', {'id' : 'text'}).get_text().replace('  ', '').replace('\n', '')
+        document_text_lang = soup.find('div', {'id' : 'text'}).get_text()
         document_data['text'] = document_text_lang
+        print(document_data['text'])
     except:
         document_data['text'] = "Full text was either not available or we were unable to collect it."
 
@@ -267,7 +268,7 @@ def collect_data(celex):
     # We will save our file into eurlex_docs folder
     # And we will name our file {celex_number}.json
     current_path = os.getcwd()
-    docs_subdirectory = os.path.join(current_path, 'eurlex_docs')
+    docs_subdirectory = os.path.join(current_path, 'eurlex_docs_round2')
     filename = remove_forbidden_characters(celex) + '.json'
     docs_path = os.path.join(docs_subdirectory, filename)
     with open(docs_path, 'w') as outfile:
