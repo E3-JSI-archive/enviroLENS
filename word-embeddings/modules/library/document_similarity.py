@@ -1,6 +1,7 @@
 import numpy as np
 
-class DocumentSimilarity(embedding):
+
+class DocumentSimilarity:
     """Given a document embedding, provides tools for analysis of document similarity.
 
     Args:
@@ -38,14 +39,14 @@ class DocumentSimilarity(embedding):
         """
 
         # calculate the similarities and revert it
-        sims = [similarity(embedding, d) for d in de]
+        sims = [similarity(self.embedding[index], d) for d in self.embedding]
 
         # sort and get the corresponding indices
         indices = []
-        for c, index in enumerate(np.argsort(sims)):
+        for c, i in enumerate(np.argsort(sims)):
             if c == k:
                 break
-            indices.append(index)
+            indices.append(i)
 
         # return indices of the neighbors
         return indices

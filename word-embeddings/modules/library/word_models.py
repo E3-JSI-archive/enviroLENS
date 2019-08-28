@@ -2,7 +2,7 @@ import numpy as np
 from gensim.models import KeyedVectors, FastText
 
 
-class EmbedWords:
+class WordModels:
     """
 
     Args:
@@ -10,8 +10,8 @@ class EmbedWords:
     """
 
     def __init__(self):
-        self.embedding = np.ndarray([])
-        self.model = KeyedVectors
+        self.embedding = None
+        self.model = None
 
     def load(self, path, model='word2vec'):
         """
