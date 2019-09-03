@@ -1,3 +1,5 @@
+import requests
+
 class Translator():
     """
     Class that can be used to translate unlimited text using Google's free API.
@@ -39,15 +41,15 @@ class Translator():
                 string containing text translated into target language.
         """
 
-    url = self.base_url + source_language + "&tl=" + target_language + "&dt=t&q=" + text
-    
-    request = requests.get(url)
+        url = self.base_url + source_language + "&tl=" + target_language + "&dt=t&q=" + text
+        
+        request = requests.get(url)
 
-    try:
-        # JSON response is split into sentences. Each sentence is translated separately.
-        return ''.join(e[0] for e in request.json()[0])
-    except:
-        return False
+        try:
+            # JSON response is split into sentences. Each sentence is translated separately.
+            return ''.join(e[0] for e in request.json()[0])
+        except:
+            return False
 
 
 
