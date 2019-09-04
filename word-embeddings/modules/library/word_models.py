@@ -3,13 +3,13 @@ from gensim.models import KeyedVectors, FastText
 
 
 class WordModels:
-    """
-
-    Args:
-
-    """
 
     def __init__(self):
+        """
+        Parameters:
+            embedding (gensim.models.keyedvectors.*): word embedding
+            model
+        """
         self.embedding = None
         self.model = None
 
