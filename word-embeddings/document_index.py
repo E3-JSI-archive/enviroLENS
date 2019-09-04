@@ -6,6 +6,7 @@ from modules.library.postgresql import PostgresQL
 from nltk.corpus import stopwords
 from gensim.parsing.preprocessing import preprocess_string, strip_tags, \
      strip_punctuation
+
 import os
 
 class Indexer():
@@ -57,6 +58,10 @@ class Indexer():
             "document_form"
         ]
         lower = lambda x: x.lower()
+        # Function that removes all \u (for example \uf108 empty square) characters from string.
+        # It encodes it as ascii and ignores all errors (therefore gets rid of those 
+        # characters since in ascii they dont exist). Then decodes it back to utf-8.
+        remove_unicode = lambda x: (x.encode('ascii', 'ignore')).decode('utf-8')
 
         # Collection of all our words
         words = []
@@ -65,7 +70,7 @@ class Indexer():
             if part is None:
                 continue
             # Remove punctuation, make string lower.
-            part = preprocess_string(part, [lower, strip_punctuation])
+            part = preprocess_string(part, [lower, strip_punctuation, remove_unicode])
             words += [w for w in part if w not in self.stopwords]
         
         return words
