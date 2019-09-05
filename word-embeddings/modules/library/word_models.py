@@ -3,33 +3,45 @@ from gensim.models import KeyedVectors, FastText
 
 
 class WordModels:
+    """
+    Class to load, train or save word embeddings.
+
+    Attributes:
+        embedding (gensim.models.keyedvectors.*): word embedding
+        model (type): word embedding model
+
+    Methods:
+        load(path, model_type='Word2vec'): loads word embedding model saved at 'path' and updates parameters 'embedding'
+            and 'model'. Argument 'model_type' describes which library we want to use.
+        train(documents, size=300, window=3, min_count=4, epochs=50): trains word embedding model on corpus 'documents'
+            using fastText.
+        save_to_file(file_name): saves the model to a file with path 'file_name'.
+
+    """
 
     def __init__(self):
-        """
-        Parameters:
-            embedding (gensim.models.keyedvectors.*): word embedding
-            model
-        """
         self.embedding = None
         self.model = None
 
-    def load(self, path, model='word2vec'):
+    def load(self, path, model_type='Word2vec'):
         """
         Load pre-trained word embedding model and save it into embed_words.embedding.
 
         Args:
             path (str): relative path to the .vec file containing pre-trained model.
-            model (str): type of the model - must be one of the following:'word2vec', 'fastText'. (Default = 'word2vec')
+            model_type (str): type of the model - must be one of the following:'Word2vec' or 'fastText'.
+                (Default = 'word2vec')
 
         """
-        if model == 'word2vec':
+        if model_type == 'Word2vec':
             self.model = KeyedVectors
             self.embedding = self.model.load_word2vec_format(path)
-        elif model == 'fastText':
+        elif model_type == 'fastText':
             self.model = FastText
             self.embedding = self.model.load(path)
         else:
-            raise Exception("Model {} not supported. Cannot load word embedding model.".format(model))
+            raise Exception("Model '{}' not supported (must be 'Word2vec' or 'fastText').".format(model_type) +
+                            " Cannot load word embedding model.")
 
     def train(self, documents, size=300, window=3, min_count=4, epochs=50):
         """
@@ -49,7 +61,7 @@ class WordModels:
         self.model = tm
         self.embedding = tm.wv
 
-    def save(self, file_name):
+    def save_to_file(self, file_name):
         """
         Save the (pre-trained) word embedding model in a file.
 

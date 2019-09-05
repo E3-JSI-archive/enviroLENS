@@ -5,6 +5,13 @@ from gensim.parsing.preprocessing import preprocess_string, strip_punctuation
 from nltk.corpus import stopwords as sw
 from sklearn.manifold import TSNE
 
+# embedding_2D (numpy.ndarray): a N by 2 matrix (N = number of documents) where i-th line
+#     is the reduced document embedding of i-th document in the list 'documents', prepared
+#     in order to plot the embedding.
+# embedding_3D (numpy.ndarray): a N by 3 matrix (N = number of documents) where i-th line
+#     is the reduced document embedding of i-th document in the list 'documents', prepared
+#     in order to plot the embedding.
+
 
 class DocumentModels:
     """
@@ -17,12 +24,19 @@ class DocumentModels:
         stopwords (list(string)): list of words we want to remove from documents' texts.
         embedding (numpy.ndarray): a matrix where i-th line is the document embedding of
             i-th document in the list 'documents'.
-        embedding_2D (numpy.ndarray): a N by 2 matrix (N = number of documents) where i-th line
-            is the reduced document embedding of i-th document in the list 'documents', prepared
-            in order to plot the embedding.
-        embedding_3D (numpy.ndarray): a N by 3 matrix (N = number of documents) where i-th line
-            is the reduced document embedding of i-th document in the list 'documents', prepared
-            in order to plot the embedding.
+        embed_documents(): Creates the embedding for documents given at initialization and saves it in the attribute
+            'embedding'.
+
+    Methods:
+        tokenize(text): Tokenizes and removes stopwords from the provided text.
+        average_word_embedding(text): Creates a document embedding as the average of word embeddings of words that
+            appear in given text.
+        embed_list_of_documents(docs): Returns a document embedding of documents given as an argument.
+        add_documents(docs): Appends given documents to the model's attribute 'documents' and adds lines for document
+            embeddings of those documents at the end of the matrix 'embedding'.
+        remove_documents(docs): Removes given documents from the model's attribute 'documents' and removes lines for
+            their embeddings from the matrix 'embedding'.
+        reduce_dimension(dimension=2): Reduces the dimension of the embedding to 'dimension'.
     """
 
     def __init__(self, word_embedding, documents, stopwords=None):
@@ -34,6 +48,7 @@ class DocumentModels:
              stopwords (list(string)): list of words we want to remove from documents' texts.
                  (Default = customized list of english stopwords from module nltk)
         """
+
         self.word_vectors = word_embedding
         self.documents = documents
         if stopwords is None:
@@ -44,8 +59,8 @@ class DocumentModels:
             except ImportError:
                 print("There was an error loading stopwords from module nltk.")
         self.embedding = None
-        self.embedding_2D = None
-        self.embedding_3D = None
+        # self.embedding_2D = None
+        # self.embedding_3D = None
 
     def tokenize(self, text):
         """
@@ -57,7 +72,6 @@ class DocumentModels:
         Returns:
             word_sorted (list(tuple(str,int))): A list of tuples ('word', n), where n is the number of times word
             appears in text. The list is sorted by occurrences decreasingly.
-
         """
 
         def strip_comments(s):
@@ -89,15 +103,14 @@ class DocumentModels:
 
     def average_word_embedding(self, text):
         """
-        Creates an average of word embeddings of words that appear in given text.
+        Creates a document embedding as an average of word embeddings of words that appear in given text.
 
         Args:
             text (str): text, form which we take words and compute their average embedding
 
         Returns:
-            embedding (numpy.ndarray): an average of word embeddings of words that appear in
+            (numpy.ndarray): an average of word embeddings of words that appear in
             given text.
-
         """
 
         embedding = np.zeros(self.word_vectors.vector_size, dtype=np.float32)
@@ -115,33 +128,72 @@ class DocumentModels:
         # return the normalized embedding; if not zero
         return embedding if norm == 0 else embedding / norm
 
+    def embed_list_of_documents(self, docs):
+        """
+        Returns a document embedding of documents given as an argument.
+
+        Args:
+            docs (list(string)): list of documents we want to embed
+
+        Returns:
+             numpy.ndarray: matrix of document embeddings, where i-th line is the embedding of i-th document of the
+                 list 'docs'.
+        """
+
+        embedding = np.zeros((len(docs), self.word_vectors.vector_size), dtype=np.float32)
+        # embed individual documents:
+        for id, document in enumerate(docs):
+            embedding[id,:] = self.average_word_embedding(document)
+        return embedding
+
     def embed_documents(self):
         """
-        Creates the dataset embeddings given a document_embedding function and saves it in self.embedding.
-
+        Creates the dataset embeddings for documents given at initialization and saves it in the attribute 'embedding'.
         """
 
-        #Args:
-        #     document_embedding (method): a method returning a document embedding for a document that it gets as
-        #     an argument. (Default = average_word_embedding)
+        self.embedding = self.embed_list_of_documents(self.documents)
 
-        self.embedding = np.zeros((len(self.documents), self.word_vectors.vector_size), dtype=np.float32)
-        for id, document in enumerate(self.documents):
-            self.embedding[id,:] = self.average_word_embedding(document)
+    def add_documents(self, docs):
+        """
+        Appends given documents to the model's attribute 'documents' and adds lines for document embeddings of those
+        documents at the end of the matrix 'embedding'.
+
+        Args:
+            docs (list(str)): List of documents we want to add to our model
+        """
+
+        docs = [d for d in docs if d not in self.documents]
+        new_embedding = self.embed_list_of_documents(docs)
+        self.documents = self.documents + docs
+        self.embedding = np.concatenate((self.embedding, new_embedding))
+
+    def remove_documents(self, docs):
+        """
+        Removes given documents from the model's attribute 'documents' and removes lines for their embeddings from the
+        matrix 'embedding'.
+
+        Args:
+            docs (list(str)): List of documents we want to remove from our model
+        """
+
+        for doc in docs:
+            if doc in self.documents:
+                index = self.documents.index(doc)
+                self.documents.remove(doc)
+                self.embedding = np.concatenate((self.embedding[0:index, :], self.embedding[index+1:, :]))
 
     def reduce_dimension(self, dimension=2):
         """
-        Reduces the dimension of the embedding to 2 or 3. Saves the result in attribute
-        embedding_2D or embedding_3D, respectively.
+        Reduces the dimension of the embedding to 'dimension'.
 
         Args:
             dimension (int): The dimension to which we want to reduce the embedding. (Default = 2)
 
         Returns:
-            N*dimension matrix (numpy.ndarray) of document embeddings with reduced dimension,
-            where N is the number of documents in 'documents'.
-
+            numpy.ndarray: N*dimension matrix of document embeddings with reduced dimension, where N is the number of
+                documents in 'documents'.
         """
+
         if self.embedding is None:
             self.embed_documents()
         return TSNE(n_components=dimension).fit_transform(self.embedding)
