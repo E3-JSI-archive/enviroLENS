@@ -1,11 +1,20 @@
-data_preparation_for_infominer/legislation/
-data_preparation_for_infominer/jurisprudence/
-data_preparation_for_infominer/treaty/
-data_preparation_for_infominer/treaty decisions/
-data_preparation_for_infominer/literature/
-Data grabber/legislation/
-Data grabber/jurisprudence/
-Data grabber/treaty/
-Data grabber/treaty decisions/
-Data grabber/literature/
-Data grabber - EURLEX/eurlex_docs/
+# ignore crawled data
+crawling/ecolex/legislation/
+crawling/ecolex/jurisprudence/
+crawling/ecolex/treaty/
+crawling/ecolex/treaty-decisions/
+crawling/ecolex/literature/
+crawling/eurlex/eurlex_docs/
+
+# ignore analysis generated files
+analysis/infominer/legislation/
+analysis/infominer/jurisprudence/
+analysis/infominer/treaty/
+analysis/infominer/treaty-decisions/
+analysis/infominer/literature/
+
+# vscode specifications
+.vscode
+
+# ignore python files
+__pycache__
