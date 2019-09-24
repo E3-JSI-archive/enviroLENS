@@ -9,3 +9,5 @@ Data grabber/treaty/
 Data grabber/treaty decisions/
 Data grabber/literature/
 Data grabber - EURLEX/eurlex_docs/
+venv/
+word-embeddings/data
